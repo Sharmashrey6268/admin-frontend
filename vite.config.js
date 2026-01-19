@@ -3,4 +3,8 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  base: "/",          // ✅ VERY IMPORTANT for Vercel
+  build: {
+    outDir: "dist",   // safety (default hai but explicit rakho)
+  },
 });
