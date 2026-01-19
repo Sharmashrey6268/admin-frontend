@@ -26,25 +26,17 @@ const Login = () => {
     try {
       const res = await API.post("/auth/login", data);
 
-      // ✅ save token
+      // ✅ SAVE TOKEN + LOGIN TIME
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("loginTime", Date.now());
 
       showToast("success", "Login successful");
 
-      // ✅ IMPORTANT: replace true (no back to login)
       setTimeout(() => {
         navigate("/admin/dashboard", { replace: true });
       }, 700);
     } catch (err) {
-      const message = err.response?.data?.message?.toLowerCase() || "";
-
-      if (message.includes("email")) {
-        showToast("error", "Invalid email address");
-      } else if (message.includes("password")) {
-        showToast("error", "Invalid password");
-      } else {
-        showToast("error", "Invalid credentials");
-      }
+      showToast("error", "Invalid credentials");
     } finally {
       setLoading(false);
     }
@@ -55,15 +47,11 @@ const Login = () => {
       className="min-h-screen flex text-white"
       style={{ backgroundColor: colors.maroon }}
     >
-      {/* TOAST */}
       <Toast toast={toast} />
 
       {/* LEFT IMAGE */}
       <motion.div
         className="hidden lg:flex w-1/2 relative"
-        initial={{ scale: 1.05 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c')",
@@ -75,66 +63,47 @@ const Login = () => {
       </motion.div>
 
       {/* LOGIN CARD */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6">
-        <motion.div
-          initial={{ y: 60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          className="w-full max-w-md backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl"
-        >
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4">
+        <motion.div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
           <h1
-            className="text-center text-3xl sm:text-4xl tracking-widest mb-1 uppercase"
-            style={{ color: colors.gold, fontFamily: "Playfair Display" }}
+            className="text-center text-3xl tracking-widest mb-6 uppercase"
+            style={{ color: colors.gold }}
           >
             SHREE AAKAR
           </h1>
 
-          <p
-            className="text-center text-[9px] sm:text-[10px] tracking-[0.3em] uppercase mb-8"
-            style={{ color: colors.lightGold }}
-          >
-            Colors | Culture | Creations
-          </p>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* EMAIL */}
-            <div className="border-b border-white/30 focus-within:border-[#C5A059]">
-              <input
-                type="email"
-                placeholder="Email Address"
-                {...register("email", { required: true })}
-                className="w-full bg-transparent py-3 outline-none text-sm"
-              />
-            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              {...register("email", { required: true })}
+              className="w-full bg-transparent border-b py-3 outline-none"
+            />
 
-            {/* PASSWORD */}
-            <div className="relative border-b border-white/30 focus-within:border-[#C5A059]">
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 {...register("password", { required: true })}
-                className="w-full bg-transparent py-3 outline-none text-sm pr-10"
+                className="w-full bg-transparent border-b py-3 outline-none pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-3 text-white/60"
+                className="absolute right-2 top-3"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
-            {/* BUTTON */}
-            <motion.button
+            <button
               type="submit"
               disabled={loading}
-              whileHover={!loading ? { scale: 1.02 } : {}}
-              whileTap={!loading ? { scale: 0.98 } : {}}
-              className="w-full py-3 font-bold tracking-widest text-sm disabled:opacity-60"
+              className="w-full py-3 font-bold tracking-widest disabled:opacity-60"
               style={{ backgroundColor: colors.gold, color: colors.maroon }}
             >
               {loading ? "AUTHENTICATING..." : "LOGIN"}
-            </motion.button>
+            </button>
           </form>
         </motion.div>
       </div>
