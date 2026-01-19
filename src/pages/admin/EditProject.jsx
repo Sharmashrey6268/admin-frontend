@@ -7,6 +7,7 @@ const EditProject = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -16,8 +17,7 @@ const EditProject = () => {
     description: "",
   });
 
-  const [images, setImages] = useState([]); 
-  // images = [{ url?, base64?, caption }]
+  const [images, setImages] = useState([]);
 
   /* ================= FETCH PROJECT ================= */
   useEffect(() => {
@@ -37,10 +37,9 @@ const EditProject = () => {
         setImages(
           p.images.map((img) => ({
             url: img.url,
-            caption: img.caption || "",
           }))
         );
-      } catch (err) {
+      } catch {
         alert("Failed to load project");
       } finally {
         setLoading(false);
@@ -64,10 +63,7 @@ const EditProject = () => {
       reader.onloadend = () => {
         setImages((prev) => [
           ...prev,
-          {
-            base64: reader.result,
-            caption: "",
-          },
+          { base64: reader.result },
         ]);
       };
       reader.readAsDataURL(file);
@@ -88,6 +84,8 @@ const EditProject = () => {
     }
 
     try {
+      setUpdating(true); // 🔥 START LOADING
+
       await api.put(`/projects/${id}`, {
         ...form,
         images,
@@ -95,109 +93,124 @@ const EditProject = () => {
 
       alert("Project updated successfully");
       navigate("/admin/projects");
-    } catch (err) {
+    } catch {
       alert("Update failed");
+    } finally {
+      setUpdating(false); // 🔥 STOP LOADING
     }
   };
 
   if (loading) return <p className="p-6">Loading...</p>;
 
   return (
-    <div className="max-w-4xl bg-white p-8 rounded-xl shadow">
-      <h2 className="text-2xl font-serif mb-6">Edit Project</h2>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <input
-          className="border p-3 w-full"
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) =>
-            setForm({ ...form, title: e.target.value })
-          }
-        />
-
-        <input
-          className="border p-3 w-full"
-          placeholder="Category"
-          value={form.category}
-          onChange={(e) =>
-            setForm({ ...form, category: e.target.value })
-          }
-        />
-
-        <input
-          className="border p-3 w-full"
-          placeholder="Year"
-          value={form.year}
-          onChange={(e) =>
-            setForm({ ...form, year: e.target.value })
-          }
-        />
-
-        <input
-          className="border p-3 w-full"
-          placeholder="Location"
-          value={form.location}
-          onChange={(e) =>
-            setForm({ ...form, location: e.target.value })
-          }
-        />
-
-        <textarea
-          className="border p-3 w-full"
-          rows="4"
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) =>
-            setForm({ ...form, description: e.target.value })
-          }
-        />
-
-        {/* IMAGE UPLOAD */}
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleNewImages}
-        />
-
-        {/* IMAGE PREVIEW */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {images.map((img, index) => (
-            <div key={index} className="border rounded p-2">
-              <div className="h-32 overflow-hidden rounded">
-                <img
-                  src={img.url || img.base64}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <input
-                className="border p-2 mt-2 w-full text-sm"
-                placeholder="Caption"
-                value={img.caption}
-                onChange={(e) => {
-                  const updated = [...images];
-                  updated[index].caption = e.target.value;
-                  setImages(updated);
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="text-red-600 text-xs mt-2"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <button className="bg-[#4B1021] text-white px-6 py-2 rounded">
-          Update Project
+    <div className="w-full flex justify-center px-4 lg:px-0">
+      <div className="w-full max-w-5xl bg-white p-6 lg:p-10 rounded-xl shadow relative">
+        
+        {/* ❌ CANCEL BUTTON */}
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm("Discard changes?")) {
+              navigate("/admin/projects");
+            }
+          }}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl"
+          title="Cancel"
+        >
+          ✕
         </button>
-      </form>
+
+        <h2 className="text-2xl font-serif mb-6">
+          Edit Project
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* INPUTS */}
+          {["title", "category", "year", "location"].map((field) => (
+            <input
+              key={field}
+              className="border p-3 w-full rounded"
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={form[field]}
+              onChange={(e) =>
+                setForm({ ...form, [field]: e.target.value })
+              }
+              disabled={updating}
+            />
+          ))}
+
+          <textarea
+            className="border p-3 w-full rounded"
+            rows="4"
+            placeholder="Description"
+            value={form.description}
+            onChange={(e) =>
+              setForm({ ...form, description: e.target.value })
+            }
+            disabled={updating}
+          />
+
+          {/* IMAGE UPLOAD */}
+          <div>
+            <label className="block mb-2 font-medium">
+              Project Images (max 5)
+            </label>
+
+            <label className={`inline-block border px-4 py-2 rounded text-sm
+              ${updating ? "bg-gray-200 cursor-not-allowed" : "bg-gray-100 cursor-pointer hover:bg-gray-200"}
+            `}>
+              ➕ Add Images
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                disabled={updating}
+                onChange={handleNewImages}
+              />
+            </label>
+          </div>
+
+          {/* IMAGE PREVIEW */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {images.map((img, index) => (
+              <div
+                key={index}
+                className="border rounded-lg p-3 flex flex-col"
+              >
+                <div className="bg-gray-100 rounded flex items-center justify-center h-48">
+                  <img
+                    src={img.url || img.base64}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  disabled={updating}
+                  className="text-red-600 text-xs mt-2 self-end disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* SUBMIT */}
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={updating}
+              className={`px-6 py-3 rounded w-full lg:w-auto text-white
+                ${updating ? "bg-gray-400 cursor-not-allowed" : "bg-[#4B1021]"}
+              `}
+            >
+              {updating ? "Updating..." : "Update Project"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

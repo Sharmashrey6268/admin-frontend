@@ -202,57 +202,65 @@ const Projects = () => {
       </div>
 
       {/* ================= EXPLORE MODAL ================= */}
-      {selectedProject && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-          <div className="bg-white max-w-5xl w-full p-6 rounded-xl relative">
-            <button
-              className="absolute top-4 right-4 text-xl"
-              onClick={() => setSelectedProject(null)}
-            >
-              ✕
-            </button>
+        {selectedProject && (
+  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
+    <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl relative">
+      {/* CLOSE */}
+      <button
+        className="absolute top-4 right-4 text-xl"
+        onClick={() => setSelectedProject(null)}
+      >
+        ✕
+      </button>
 
-            <h2 className="text-2xl font-serif">
-              {selectedProject.title}
-            </h2>
+      <div className="p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* LEFT — TEXT */}
+        <div>
+          <h2 className="text-2xl font-serif mb-2">
+            {selectedProject.title}
+          </h2>
 
-            <p className="text-sm opacity-70">
-              {selectedProject.category} • {selectedProject.year} •{" "}
-              {selectedProject.location}
-            </p>
+          <p className="text-sm opacity-70 mb-4">
+            {selectedProject.category} • {selectedProject.year} •{" "}
+            {selectedProject.location}
+          </p>
 
-            <p className="mt-4 whitespace-pre-line">
-              {selectedProject.description}
-            </p>
-
-            <div className="relative mt-6">
-              <div className="h-[400px] overflow-hidden rounded">
-                <img
-                  src={selectedProject.images[activeImage].url}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              {selectedProject.images.length > 1 && (
-                <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-2 top-1/2 bg-white px-3"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-2 top-1/2 bg-white px-3"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+          <p className="whitespace-pre-line leading-relaxed text-gray-700">
+            {selectedProject.description}
+          </p>
         </div>
-      )}
+
+        {/* RIGHT — IMAGE */}
+        <div>
+          <div className="bg-gray-100 rounded-lg flex items-center justify-center h-[420px]">
+            <img
+              src={selectedProject.images[activeImage].url}
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+
+          {selectedProject.images.length > 1 && (
+            <div className="flex justify-between mt-3">
+              <button
+                onClick={prevImage}
+                className="border px-4 py-1 rounded"
+              >
+                ‹ Prev
+              </button>
+              <button
+                onClick={nextImage}
+                className="border px-4 py-1 rounded"
+              >
+                Next ›
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
