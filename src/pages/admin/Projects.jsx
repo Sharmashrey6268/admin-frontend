@@ -9,10 +9,7 @@ const useDebounce = (value, delay = 400) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(timer);
   }, [value, delay]);
 
@@ -20,7 +17,6 @@ const useDebounce = (value, delay = 400) => {
 };
 
 const Projects = () => {
-  /* 🔥 TOAST HOOK — CORRECT PLACE */
   const { toast, showToast } = useToast();
 
   const [projects, setProjects] = useState([]);
@@ -33,24 +29,23 @@ const Projects = () => {
   const [category, setCategory] = useState("all");
   const [year, setYear] = useState("all");
 
-  const debouncedSearch = useDebounce(search, 400);
+  const debouncedSearch = useDebounce(search);
 
   /* ================= FETCH PROJECTS ================= */
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         const res = await api.get("/projects");
-        setProjects(res.data);
-        setFilteredProjects(res.data);
-      } catch (err) {
+        setProjects(res.data || []);
+        setFilteredProjects(res.data || []);
+      } catch {
         showToast("error", "Failed to fetch projects");
       }
     };
-
     fetchProjects();
   }, [showToast]);
 
-  /* ================= SEARCH + FILTER ================= */
+  /* ================= SEARCH & FILTER ================= */
   useEffect(() => {
     let data = [...projects];
 
@@ -86,31 +81,34 @@ const Projects = () => {
     }
   };
 
-  /* ================= SLIDER ================= */
+  /* ================= SLIDER (SAFE) ================= */
   const nextImage = () => {
+    if (!selectedProject?.images?.length) return;
+
     setActiveImage((p) =>
       p === selectedProject.images.length - 1 ? 0 : p + 1
     );
   };
 
   const prevImage = () => {
+    if (!selectedProject?.images?.length) return;
+
     setActiveImage((p) =>
       p === 0 ? selectedProject.images.length - 1 : p - 1
     );
   };
 
-  /* ================= FILTER DATA ================= */
+  /* ================= FILTER OPTIONS ================= */
   const categories = ["all", ...new Set(projects.map((p) => p.category))];
   const years = ["all", ...new Set(projects.map((p) => String(p.year)))];
 
   return (
     <div className="p-6">
-      {/* 🔔 TOAST UI */}
       <Toast toast={toast} />
 
       <h2 className="text-2xl font-serif mb-6">Projects</h2>
 
-      {/* ================= SEARCH & FILTER BAR ================= */}
+      {/* ================= SEARCH & FILTER ================= */}
       <div className="flex flex-wrap gap-4 mb-6">
         <input
           placeholder="Search by title or location"
@@ -124,8 +122,8 @@ const Projects = () => {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          {categories.map((c, index) => (
-            <option key={`cat-${index}-${c}`} value={c}>
+          {categories.map((c) => (
+            <option key={c} value={c}>
               {c}
             </option>
           ))}
@@ -136,8 +134,8 @@ const Projects = () => {
           value={year}
           onChange={(e) => setYear(e.target.value)}
         >
-          {years.map((y, index) => (
-            <option key={`year-${index}-${y}`} value={y}>
+          {years.map((y) => (
+            <option key={y} value={y}>
               {y}
             </option>
           ))}
@@ -150,8 +148,9 @@ const Projects = () => {
           <div key={p._id} className="bg-white rounded-xl shadow">
             <div className="h-48 overflow-hidden rounded-t-xl">
               <img
-                src={p.images?.[0]?.url || "/placeholder.jpg"}
+                src={p?.images?.[0]?.url || "/placeholder.jpg"}
                 className="h-full w-full object-cover"
+                alt={p.title}
               />
             </div>
 
@@ -202,65 +201,67 @@ const Projects = () => {
       </div>
 
       {/* ================= EXPLORE MODAL ================= */}
-        {selectedProject && (
-  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
-    <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl relative">
-      {/* CLOSE */}
-      <button
-        className="absolute top-4 right-4 text-xl"
-        onClick={() => setSelectedProject(null)}
-      >
-        ✕
-      </button>
+      {selectedProject && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
+          <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl relative">
+            <button
+              className="absolute top-4 right-4 text-xl"
+              onClick={() => setSelectedProject(null)}
+            >
+              ✕
+            </button>
 
-      <div className="p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* LEFT — TEXT */}
-        <div>
-          <h2 className="text-2xl font-serif mb-2">
-            {selectedProject.title}
-          </h2>
+            <div className="p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* LEFT */}
+              <div>
+                <h2 className="text-2xl font-serif mb-2">
+                  {selectedProject.title}
+                </h2>
 
-          <p className="text-sm opacity-70 mb-4">
-            {selectedProject.category} • {selectedProject.year} •{" "}
-            {selectedProject.location}
-          </p>
+                <p className="text-sm opacity-70 mb-4">
+                  {selectedProject.category} • {selectedProject.year} •{" "}
+                  {selectedProject.location}
+                </p>
 
-          <p className="whitespace-pre-line leading-relaxed text-gray-700">
-            {selectedProject.description}
-          </p>
-        </div>
+                <p className="whitespace-pre-line leading-relaxed text-gray-700">
+                  {selectedProject.description || "No description"}
+                </p>
+              </div>
 
-        {/* RIGHT — IMAGE */}
-        <div>
-          <div className="bg-gray-100 rounded-lg flex items-center justify-center h-[420px]">
-            <img
-              src={selectedProject.images[activeImage].url}
-              className="max-h-full max-w-full object-contain"
-            />
-          </div>
+              {/* RIGHT */}
+              <div>
+                <div className="bg-gray-100 rounded-lg flex items-center justify-center h-[420px]">
+                  <img
+                    src={
+                      selectedProject?.images?.[activeImage]?.url ||
+                      "/placeholder.jpg"
+                    }
+                    className="max-h-full max-w-full object-contain"
+                    alt="Project"
+                  />
+                </div>
 
-          {selectedProject.images.length > 1 && (
-            <div className="flex justify-between mt-3">
-              <button
-                onClick={prevImage}
-                className="border px-4 py-1 rounded"
-              >
-                ‹ Prev
-              </button>
-              <button
-                onClick={nextImage}
-                className="border px-4 py-1 rounded"
-              >
-                Next ›
-              </button>
+                {selectedProject?.images?.length > 1 && (
+                  <div className="flex justify-between mt-3">
+                    <button
+                      onClick={prevImage}
+                      className="border px-4 py-1 rounded"
+                    >
+                      ‹ Prev
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="border px-4 py-1 rounded"
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 };
